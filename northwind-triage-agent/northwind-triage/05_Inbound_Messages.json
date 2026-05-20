@@ -1,0 +1,193 @@
+{
+  "_meta": {
+    "description": "Inbound customer messages received by Northwind Home Services. These are the inputs to the triage agent. Each message includes only the raw fields the agent would see in production: an ID, channel, timestamp, sender, subject (where applicable), and body. Do not modify this file.",
+    "count": 20,
+    "channels_explained": {
+      "email": "Came in via support@northwind.com.au",
+      "webform": "Submitted via the contact form on the website",
+      "sms": "Came in via the SMS line — usually short, often after-hours"
+    }
+  },
+  "messages": [
+    {
+      "id": "MSG-001",
+      "channel": "email",
+      "received_at": "2024-06-12T09:14:00+10:00",
+      "sender_name": "Sarah Patel",
+      "sender_address": "spatel.home@gmail.com",
+      "subject": "Dripping tap in ensuite",
+      "body": "Hi there, the cold tap in our upstairs ensuite has been dripping for about a week and it's getting worse. Nothing dramatic, just annoying and probably wasting water. Can you book someone to come and have a look? We're in Mosman. Thanks, Sarah"
+    },
+    {
+      "id": "MSG-002",
+      "channel": "sms",
+      "received_at": "2024-06-12T22:47:00+10:00",
+      "sender_name": "Tom W.",
+      "sender_address": "+61 4xx xxx 412",
+      "subject": null,
+      "body": "WATER COMING THROUGH KITCHEN CEILING from the bathroom upstairs. Can hear it dripping. Have turned off the bathroom taps but still going. Help!!"
+    },
+    {
+      "id": "MSG-003",
+      "channel": "webform",
+      "received_at": "2024-06-12T11:02:00+10:00",
+      "sender_name": "Mei Lin Ng",
+      "sender_address": "meilin.ng@outlook.com",
+      "subject": "Gutter cleaning quote",
+      "body": "Hi, looking for a quote on gutter cleaning for a two-storey house in Lane Cove. Both front and back gutters, plus downpipes. Please advise pricing and availability. Thanks."
+    },
+    {
+      "id": "MSG-004",
+      "channel": "email",
+      "received_at": "2024-06-12T14:33:00+10:00",
+      "sender_name": "Daniel O'Brien",
+      "sender_address": "dan.obrien1978@bigpond.com",
+      "subject": "Unhappy with last week's job — invoice INV-44821",
+      "body": "I had an electrician out last Tuesday to install three power points in our home office. The work itself was fine, but the invoice came through at $720 — which is more than the $570 your sales team quoted me on the phone. Nobody mentioned an upper-floor surcharge until the invoice landed. I'd like this resolved. I'm not paying the extra $150 unless someone can explain it properly. Frankly I'm considering leaving a review about this if it isn't sorted."
+    },
+    {
+      "id": "MSG-005",
+      "channel": "email",
+      "received_at": "2024-06-12T08:41:00+10:00",
+      "sender_name": "Priya Shah",
+      "sender_address": "p.shah@workmail.com",
+      "subject": "EV charger installation — quote request",
+      "body": "Hi team, we just took delivery of a new EV and want to install a home charger. Single car, single-phase should be fine. House is in Chatswood, built 2019. Could you send through a quote and let us know your lead times? Cheers, Priya"
+    },
+    {
+      "id": "MSG-006",
+      "channel": "webform",
+      "received_at": "2024-06-13T07:22:00+10:00",
+      "sender_name": "Kevin Tran",
+      "sender_address": "k.tran@homemail.com",
+      "subject": "No hot water",
+      "body": "We woke up this morning and there's no hot water at all. The unit is a gas hot water system, about 8 years old. We've got two kids and it's freezing today. Can someone come out today please? We're in Hornsby."
+    },
+    {
+      "id": "MSG-007",
+      "channel": "email",
+      "received_at": "2024-06-13T10:15:00+10:00",
+      "sender_name": "Rachel Ford",
+      "sender_address": "rachel.ford@bigfirm.com.au",
+      "subject": "Dishwasher not working",
+      "body": "Hi, our Bosch dishwasher has stopped mid-cycle and won't restart. There's water sitting in the bottom and the door won't unlock. Can you send someone to repair it? We bought it about three years ago. We're in Neutral Bay."
+    },
+    {
+      "id": "MSG-008",
+      "channel": "email",
+      "received_at": "2024-06-13T13:48:00+10:00",
+      "sender_name": "Alex Henderson",
+      "sender_address": "ahenderson@architectfirm.com",
+      "subject": "Bathroom reno — plumbing scope",
+      "body": "We're starting a full bathroom renovation in our place in Cremorne in August. The builder has asked us to organise the plumbing trade directly. Scope is: rough-in for new vanity (single basin), new shower (single mixer), relocate toilet by ~1.5m, and new floor waste. Would Northwind be able to take this on? If so, can we get a written quote? Happy to email through the architect's plans."
+    },
+    {
+      "id": "MSG-009",
+      "channel": "sms",
+      "received_at": "2024-06-13T19:05:00+10:00",
+      "sender_name": "Linda M.",
+      "sender_address": "+61 4xx xxx 088",
+      "subject": null,
+      "body": "Heater stopped working tonight. Just blowing cold air. It's a ducted system. Can someone come tomorrow?"
+    },
+    {
+      "id": "MSG-010",
+      "channel": "email",
+      "received_at": "2024-06-14T09:33:00+10:00",
+      "sender_name": "Marcus Webb",
+      "sender_address": "m.webb@strataco.com.au",
+      "subject": "Quote — multiple unit aircon servicing",
+      "body": "Hi, I'm the strata manager for a small block of 8 units in North Sydney. We're looking to get the split-system aircons in all units serviced as a single job. Can Northwind take on something like this and what would the pricing be? Building is residential, units are between 60-90m² each."
+    },
+    {
+      "id": "MSG-011",
+      "channel": "email",
+      "received_at": "2024-06-14T11:17:00+10:00",
+      "sender_name": "Jess Caruso",
+      "sender_address": "jcaruso@personalmail.net",
+      "subject": "Solar panels — info please",
+      "body": "Hi, looking to put solar panels on our roof in Willoughby. North-facing, single storey, tile roof. Could you send through some info on what you offer and rough pricing? Thanks!"
+    },
+    {
+      "id": "MSG-012",
+      "channel": "email",
+      "received_at": "2024-06-14T15:42:00+10:00",
+      "sender_name": "George Petrakis",
+      "sender_address": "g.petrakis@gmail.com",
+      "subject": "Re: Booking confirmation 18/06",
+      "body": "Hi, I had a booking for the 18th of June at 10am for a hot water service replacement. Something has come up at work and I won't be home that morning. Could we move it to the afternoon, or to the 19th? Either works. Thanks for understanding."
+    },
+    {
+      "id": "MSG-013",
+      "channel": "webform",
+      "received_at": "2024-06-14T16:58:00+10:00",
+      "sender_name": "Anonymous",
+      "sender_address": "noreply@webform.com",
+      "subject": "service request",
+      "body": "asdf asdf test test"
+    },
+    {
+      "id": "MSG-014",
+      "channel": "email",
+      "received_at": "2024-06-15T08:09:00+10:00",
+      "sender_name": "Hannah Wei",
+      "sender_address": "hwei@university.edu.au",
+      "subject": "Burning smell from power point",
+      "body": "Hi, last night I noticed a burning smell near the power point behind our TV unit and the powerpoint feels warm to touch. I've unplugged everything from it and turned off the circuit at the switchboard for now. Is this something you can come and look at urgently? We're in Lindfield."
+    },
+    {
+      "id": "MSG-015",
+      "channel": "email",
+      "received_at": "2024-06-15T10:24:00+10:00",
+      "sender_name": "Ben Shaw",
+      "sender_address": "ben.shaw@trades.com.au",
+      "subject": "Invoice INV-44903 — paid?",
+      "body": "Morning team, I paid INV-44903 last Friday by bank transfer but the customer portal still shows it as outstanding. Can you confirm receipt? Reference number was NW44903. Cheers."
+    },
+    {
+      "id": "MSG-016",
+      "channel": "email",
+      "received_at": "2024-06-15T11:55:00+10:00",
+      "sender_name": "Olivia Bennett",
+      "sender_address": "olivia.b@designstudio.com.au",
+      "subject": "Switchboard upgrade quote — Bondi",
+      "body": "Hi, our switchboard is original to the house (built 1970s) and our electrician on a recent small job recommended we upgrade it. Could you come and quote? We're in Bondi. Also — separately — we've been thinking about a ducted aircon system. Could you quote that at the same visit? Saves us coordinating two appointments."
+    },
+    {
+      "id": "MSG-017",
+      "channel": "email",
+      "received_at": "2024-06-15T13:11:00+10:00",
+      "sender_name": "Robert Liang",
+      "sender_address": "rliang@retiree.net",
+      "subject": "Complaint about plumber's behaviour",
+      "body": "I had one of your plumbers, a younger man, out on Wednesday to fix a blocked drain. The work was done, but he left muddy boot prints through my hallway and across a rug, and was quite short with my wife when she asked him to take his boots off. We are not happy. The job invoice was $280 which is fine, but I expect a conversation about the conduct. This is not the standard of service I'd hoped for from Northwind, who were recommended to us by neighbours."
+    },
+    {
+      "id": "MSG-018",
+      "channel": "sms",
+      "received_at": "2024-06-15T18:30:00+10:00",
+      "sender_name": "Unknown",
+      "sender_address": "+61 4xx xxx 991",
+      "subject": null,
+      "body": "Hola, necesito un plomero urgente. Hay agua saliendo del calentador. Estoy en Parramatta. Pueden venir?"
+    },
+    {
+      "id": "MSG-019",
+      "channel": "email",
+      "received_at": "2024-06-16T09:48:00+10:00",
+      "sender_name": "Catherine Lowe",
+      "sender_address": "c.lowe@familymail.com",
+      "subject": "Refund on cancelled job",
+      "body": "Hi, I cancelled a booked switchboard upgrade two weeks ago (job ref NW-31288) because we ended up selling the house. I paid the 30% deposit of $720 at the time of booking. I was told a refund would be processed within 10 business days but it hasn't come through and it's now been about 14 business days. Could someone follow up please? I appreciate the cancellation was at short notice but the refund was confirmed at the time."
+    },
+    {
+      "id": "MSG-020",
+      "channel": "email",
+      "received_at": "2024-06-16T12:02:00+10:00",
+      "sender_name": "Nathan Park",
+      "sender_address": "nathan@startupco.io",
+      "subject": "Aircon for home office",
+      "body": "Hi, looking to get a split system installed in my home office (about 12m²). I'm in Glebe. What's the process — site visit first, or can you give a rough quote based on the room size? Also, separately, my office has an exposed brick wall which I'm told sometimes complicates the install. Worth flagging up front. Thanks."
+    }
+  ]
+}

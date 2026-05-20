@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Northwind Triage Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #f5f1e8;
+      --paper:     #fdfcf7;
+      --ink:       #1a1814;
+      --ink-2:     #3d3a34;
+      --muted:     #8a8478;
+      --rule:      #ddd8cc;
+      --rule-soft: #e8e3d8;
+      --accent:    #b5400a;
+      --accent-2:  #d9621e;
+      --green:     #2d6a4f;
+      --green-bg:  #e8f5ee;
+      --red:       #9b2226;
+      --red-bg:    #fdf0f0;
+      --amber:     #7b5e00;
+      --amber-bg:  #fff9e6;
+      --blue:      #1a4971;
+      --blue-bg:   #e8f2fa;
+      --serif:     'DM Serif Display', Georgia, serif;
+      --sans:      'DM Sans', system-ui, sans-serif;
+      --mono:      'DM Mono', 'Fira Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--accent-2);
+      font-style: italic;
+    }
+
+    .header-divider {
+      width: 1px;
+      height: 24px;
+      background: #3d3a34;
+    }
+
+    .header-label {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-left: auto;
+      transition: background 0.3s;
+    }
+    .status-dot.ready { background: #52b788; }
+    .status-dot.error { background: var(--red); }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* ── Left panel: input ── */
+    .panel-left {
+      background: var(--paper);
+      border-right: 1px solid var(--rule);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: var(--muted);
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      font-family: var(--sans);
+    }
+
+    .tab:hover { color: var(--ink-2); }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel { display: none; flex-direction: column; flex: 1; padding: 24px; gap: 16px; overflow-y: auto; }
+    .tab-panel.active { display: flex; }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    input[type="text"], select, textarea {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    input[type="text"]:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(181, 64, 10, 0.08);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 140px;
+      line-height: 1.6;
+    }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn-triage {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 13px 24px;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-triage:hover { background: var(--accent-2); }
+    .btn-triage:active { transform: scale(0.98); }
+    .btn-triage:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+    /* spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* message list for test panel */
+    .msg-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+
+    .msg-item {
+      padding: 12px 14px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+    }
+
+    .msg-item:hover { border-color: var(--accent); background: #fff; }
+    .msg-item.selected { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 2px rgba(181,64,10,0.12); }
+
+    .msg-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .msg-id {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .channel-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: var(--rule-soft);
+      color: var(--ink-2);
+    }
+
+    .msg-sender { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+    .msg-subject { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Right panel: result ── */
+    .panel-right {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .result-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--muted);
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .result-empty-icon {
+      font-size: 48px;
+      opacity: 0.25;
+    }
+
+    .result-empty h2 {
+      font-family: var(--serif);
+      font-size: 24px;
+      color: var(--ink-2);
+      font-weight: 400;
+    }
+
+    .result-empty p { font-size: 14px; max-width: 320px; }
+
+    .result-content { padding: 32px 40px; flex: 1; }
+
+    /* ── Decision cards ── */
+    .decision-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .decision-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .decision-meta {
+      margin-left: auto;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .decision-time {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .chip-category { background: var(--ink); color: #fff; }
+    .chip-category.BOOKING   { background: var(--blue); }
+    .chip-category.QUOTE     { background: #4a5568; }
+    .chip-category.COMPLAINT { background: var(--red); }
+    .chip-category.EMERGENCY { background: #c0392b; }
+    .chip-category.BILLING   { background: var(--amber); color: #1a1814; }
+    .chip-category.OUT_OF_SCOPE { background: var(--muted); }
+
+    .chip-priority { font-size: 11px; border: 1.5px solid; }
+    .chip-priority.P1 { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+    .chip-priority.P2 { border-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
+    .chip-priority.P3 { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+    .chip-route { background: var(--rule-soft); color: var(--ink-2); }
+    .chip-nhr-true  { background: var(--amber-bg); color: var(--amber); border: 1.5px solid var(--amber); }
+    .chip-nhr-false { background: var(--green-bg); color: var(--green); }
+
+    /* Detail sections */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .detail-card {
+      background: var(--paper);
+      border: 1px solid var(--rule-soft);
+      border-radius: 6px;
+      padding: 18px 20px;
+    }
+
+    .detail-card.full { grid-column: 1 / -1; }
+
+    .detail-card-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-card-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule-soft);
+    }
+
+    .draft-reply {
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--ink-2);
+      white-space: pre-wrap;
+    }
+
+    .reasoning-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--ink-2);
+    }
+
+    /* ── Evaluation panel ── */
+    .eval-section { padding: 32px 40px; }
+
+    .eval-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .eval-header h2 {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 400;
+    }
+
+    .btn-eval {
+      margin-left: auto;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-eval:hover { background: var(--ink-2); }
+    .btn-eval:disabled { background: var(--muted); cursor: not-allowed; }
+
+    .eval-warning {
+      background: var(--amber-bg);
+      border: 1px solid #e6c86e;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--amber);
+      margin-bottom: 20px;
+    }
+
+    .score-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .score-cell {
+      background: var(--paper);
+      padding: 18px 16px;
+      text-align: center;
+    }
+
+    .score-cell .score-value {
+      font-family: var(--serif);
+      font-size: 32px;
+      line-height: 1;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .score-cell .score-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .score-cell.highlight .score-value { color: var(--accent); }
+
+    /* Evaluation results table */
+    .eval-table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 12px;
+      text-align: left;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tr:hover td { background: rgba(181,64,10,0.03); }
+
+    .score-icon { font-size: 14px; }
+
+    .mismatch-text {
+      font-size: 11px;
+      color: var(--red);
+      font-family: var(--mono);
+    }
+
+    .match-text {
+      font-size: 11px;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    /* ── Notification toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--ink);
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 200;
+      max-width: 360px;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--red); }
+
+    /* ── Eval tabs on right panel ── */
+    .right-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--rule);
+      background: var(--paper);
+      padding: 0 40px;
+    }
+
+    .right-tab {
+      padding: 14px 20px 13px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: var(--muted);
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      font-family: var(--sans);
+    }
+
+    .right-tab:hover { color: var(--ink-2); }
+    .right-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .right-tab-panel { display: none; flex: 1; overflow-y: auto; }
+    .right-tab-panel.active { display: flex; flex-direction: column; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel-left { max-height: 50vh; }
+      .result-content, .eval-section { padding: 20px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .score-board { grid-template-columns: repeat(3, 1fr); }
+      header { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Northwind <span>Triage</span></div>
+  <div class="header-divider"></div>
+  <div class="header-label">AI Customer Message Classifier</div>
+  <div class="status-dot" id="statusDot" title="Agent status"></div>
+</header>
+
+<div class="layout">
+  <!-- ── Left: input panel ── -->
+  <div class="panel-left">
+    <div class="panel-tabs">
+      <button class="tab active" onclick="switchTab('compose')">Compose</button>
+      <button class="tab" onclick="switchTab('test')">Test Messages</button>
+    </div>
+
+    <!-- Compose tab -->
+    <div class="tab-panel active" id="tab-compose">
+      <div class="row-2">
+        <div class="field-group">
+          <label>Sender Name</label>
+          <input type="text" id="senderName" placeholder="e.g. Sarah Patel" />
+        </div>
+        <div class="field-group">
+          <label>Channel</label>
+          <select id="channel">
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+            <option value="webform">Web Form</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Sender Address / Phone</label>
+        <input type="text" id="senderAddress" placeholder="email@example.com or +61 4xx xxx xxx" />
+      </div>
+      <div class="field-group">
+        <label>Subject</label>
+        <input type="text" id="subject" placeholder="Optional subject line" />
+      </div>
+      <div class="field-group">
+        <label>Message Body</label>
+        <textarea id="body" rows="8" placeholder="Paste or type the customer's message here…"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Received At (optional)</label>
+        <input type="text" id="receivedAt" placeholder="e.g. 2024-06-12T22:47:00+10:00" />
+      </div>
+      <button class="btn-triage" id="triageBtn" onclick="handleTriage()">
+        <span id="btnLabel">Triage Message</span>
+      </button>
+    </div>
+
+    <!-- Test messages tab -->
+    <div class="tab-panel" id="tab-test">
+      <div class="msg-list" id="msgList">
+        <div style="color: var(--muted); font-size: 13px;">Loading messages…</div>
+      </div>
+      <button class="btn-triage" id="triageBtnTest" onclick="handleTriageSelected()" disabled>
+        <span>Triage Selected Message</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Right: result panel ── -->
+  <div class="panel-right">
+    <div class="right-tabs">
+      <button class="right-tab active" onclick="switchRightTab('result')">Result</button>
+      <button class="right-tab" onclick="switchRightTab('eval')">Batch Evaluation</button>
+    </div>
+
+    <!-- Result tab -->
+    <div class="right-tab-panel active" id="rtab-result">
+      <div class="result-empty" id="emptyState">
+        <div class="result-empty-icon">⌨</div>
+        <h2>Ready to triage</h2>
+        <p>Compose a message or select one from the test panel, then click Triage Message.</p>
+      </div>
+      <div class="result-content" id="resultContent" style="display:none"></div>
+    </div>
+
+    <!-- Evaluation tab -->
+    <div class="right-tab-panel" id="rtab-eval">
+      <div class="eval-section">
+        <div class="eval-header">
+          <h2>Batch Evaluation</h2>
+          <button class="btn-eval" id="evalBtn" onclick="handleEvaluate()">
+            <span id="evalBtnLabel">Run All 20 Messages</span>
+          </button>
+        </div>
+        <div class="eval-warning">
+          ⏱ This runs the agent across all 20 benchmark messages. Expect ~1.5 minutes on the Gemini free tier (15 RPM = one call every 4.5 seconds).
+        </div>
+        <div id="evalResults"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let allMessages = [];
+let selectedMsgId = null;
+
+// ── Init ──
+(async function init() {
+  await checkHealth();
+  await loadMessages();
+})();
+
+async function checkHealth() {
+  try {
+    const r = await fetch('/health');
+    const data = await r.json();
+    const dot = document.getElementById('statusDot');
+    if (data.agent_ready) {
+      dot.classList.add('ready');
+      dot.title = 'Agent ready';
+    } else {
+      dot.classList.add('error');
+      dot.title = 'Agent not ready — check GEMINI_API_KEY';
+    }
+  } catch(e) {
+    document.getElementById('statusDot').classList.add('error');
+  }
+}
+
+async function loadMessages() {
+  try {
+    const r = await fetch('/messages');
+    allMessages = await r.json();
+    renderMsgList();
+  } catch(e) {
+    document.getElementById('msgList').innerHTML =
+      `<div style="color: var(--red); font-size:13px;">Failed to load messages. Is the server running?</div>`;
+  }
+}
+
+function renderMsgList() {
+  const el = document.getElementById('msgList');
+  el.innerHTML = allMessages.map(m => `
+    <div class="msg-item" id="msgItem-${m.id}" onclick="selectMessage('${m.id}')">
+      <div class="msg-item-header">
+        <span class="msg-id">${m.id}</span>
+        <span class="channel-badge">${m.channel}</span>
+      </div>
+      <div class="msg-sender">${m.sender_name || 'Unknown'}</div>
+      <div class="msg-subject">${m.subject || m.body.substring(0, 60) + '…'}</div>
+    </div>
+  `).join('');
+}
+
+function selectMessage(id) {
+  selectedMsgId = id;
+  document.querySelectorAll('.msg-item').forEach(el => el.classList.remove('selected'));
+  const item = document.getElementById(`msgItem-${id}`);
+  if (item) item.classList.add('selected');
+  document.getElementById('triageBtnTest').disabled = false;
+}
+
+// ── Tab switching ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const idx = name === 'compose' ? 0 : 1;
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+function switchRightTab(name) {
+  document.querySelectorAll('.right-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.right-tab-panel').forEach(p => p.classList.remove('active'));
+  const idx = name === 'result' ? 0 : 1;
+  document.querySelectorAll('.right-tab')[idx].classList.add('active');
+  document.getElementById(`rtab-${name}`).classList.add('active');
+}
+
+// ── Triage ──
+async function handleTriage() {
+  const body = document.getElementById('body').value.trim();
+  if (!body) { showToast('Please enter a message body.', true); return; }
+
+  const payload = {
+    id: 'MSG-CUSTOM',
+    channel: document.getElementById('channel').value,
+    received_at: document.getElementById('receivedAt').value || new Date().toISOString(),
+    sender_name: document.getElementById('senderName').value,
+    sender_address: document.getElementById('senderAddress').value,
+    subject: document.getElementById('subject').value || null,
+    body,
+  };
+
+  await doTriage(payload, 'triageBtn', 'btnLabel');
+}
+
+async function handleTriageSelected() {
+  if (!selectedMsgId) return;
+  const msg = allMessages.find(m => m.id === selectedMsgId);
+  if (!msg) return;
+  await doTriage(msg, 'triageBtnTest', null);
+}
+
+async function doTriage(payload, btnId, labelId) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  if (labelId) {
+    document.getElementById(labelId).textContent = 'Triaging…';
+  }
+  btn.innerHTML = '<div class="spinner"></div> Triaging…';
+
+  switchRightTab('result');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'none';
+
+  try {
+    const r = await fetch('/triage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || `HTTP ${r.status}`);
+    }
+
+    const decision = await r.json();
+    renderResult(decision, payload);
+    showToast('Triage complete.');
+  } catch(e) {
+    document.getElementById('emptyState').style.display = 'flex';
+    showToast(`Error: ${e.message}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = btnId === 'triageBtnTest'
+      ? '<span>Triage Selected Message</span>'
+      : '<span>Triage Message</span>';
+  }
+}
+
+function renderResult(d, msg) {
+  const ts = new Date().toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const nhrClass = d.needs_human_review ? 'chip-nhr-true' : 'chip-nhr-false';
+  const nhrText = d.needs_human_review ? '⚑ Human Review Required' : '✓ No Review Needed';
+
+  const html = `
+    <div class="decision-header">
+      <div>
+        <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-weight:600;">
+          ${msg.id || 'Custom'} · ${(msg.channel||'').toUpperCase()}
+        </div>
+        <div class="decision-title">${escHtml(msg.subject || (msg.body||'').substring(0, 40) + '…')}</div>
+        ${msg.sender_name ? `<div style="font-size:13px; color:var(--muted); margin-top:4px;">from ${escHtml(msg.sender_name)}</div>` : ''}
+      </div>
+      <div class="decision-meta">
+        <div class="decision-time">Triaged at ${ts}</div>
+      </div>
+    </div>
+
+    <div class="chips-row">
+      <span class="chip chip-category ${d.category}">${d.category}</span>
+      <span class="chip chip-priority ${d.priority}">${d.priority}</span>
+      <span class="chip chip-route">→ ${d.route_to}</span>
+      <span class="chip ${nhrClass}">${nhrText}</span>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-card full">
+        <div class="detail-card-label">Draft Reply</div>
+        <div class="draft-reply">${escHtml(d.draft_reply)}</div>
+      </div>
+      <div class="detail-card full">
+        <div class="detail-card-label">Reasoning</div>
+        <div class="reasoning-text">${escHtml(d.reasoning)}</div>
+      </div>
+    </div>
+  `;
+
+  const el = document.getElementById('resultContent');
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+// ── Evaluation ──
+async function handleEvaluate() {
+  const btn = document.getElementById('evalBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,0.3); border-top-color:#fff; width:14px; height:14px;"></div> Running…';
+
+  document.getElementById('evalResults').innerHTML = `
+    <div style="color:var(--muted); font-size:13px; padding:16px 0; display:flex; align-items:center; gap:10px;">
+      <div class="spinner" style="border-color:rgba(0,0,0,0.15); border-top-color:var(--accent); width:16px; height:16px;"></div>
+      Running agent across 20 messages — this takes ~30 seconds…
+    </div>`;
+
+  try {
+    const r = await fetch('/evaluate', { method: 'POST' });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || `HTTP ${r.status}`);
+    }
+    const report = await r.json();
+    renderEvalResults(report);
+    showToast(`Evaluation complete. Strict accuracy: ${report.strict_accuracy}%`);
+  } catch(e) {
+    document.getElementById('evalResults').innerHTML =
+      `<div style="color:var(--red); font-size:13px;">Error: ${escHtml(e.message)}</div>`;
+    showToast(`Evaluation failed: ${e.message}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span id="evalBtnLabel">Re-run Evaluation</span>';
+  }
+}
+
+function renderEvalResults(report) {
+  const pf = report.per_field_accuracy;
+  const scoreBoard = `
+    <div class="score-board">
+      <div class="score-cell highlight">
+        <div class="score-value">${report.strict_accuracy}%</div>
+        <div class="score-label">Strict (all 4)</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value">${pf.category}%</div>
+        <div class="score-label">Category</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value">${pf.priority}%</div>
+        <div class="score-label">Priority</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value">${pf.route_to}%</div>
+        <div class="score-label">Route</div>
+      </div>
+      <div class="score-cell">
+        <div class="score-value">${pf.needs_human_review}%</div>
+        <div class="score-label">Human Review</div>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:20px;">
+      ${report.strict_count} of ${report.total_messages} messages matched on all four hard fields.
+    </div>
+  `;
+
+  const rows = report.results.map(r => {
+    const s = r.scores;
+    const a = r.agent || {};
+    const b = r.benchmark || {};
+
+    if (r.error) {
+      return `<tr><td class="msg-id">${r.id}</td><td colspan="5" style="color:var(--red); font-size:12px;">${escHtml(r.error)}</td></tr>`;
+    }
+
+    const strictIcon = s.strict ? '✓' : '✗';
+    const strictStyle = s.strict ? 'color:var(--green); font-weight:700;' : 'color:var(--red); font-weight:700;';
+
+    const catText = s.category ? `<span class="match-text">${a.category}</span>` : `<span class="mismatch-text">${a.category} ≠ ${b.category}</span>`;
+    const priText = s.priority ? `<span class="match-text">${a.priority}</span>` : `<span class="mismatch-text">${a.priority} ≠ ${b.priority}</span>`;
+    const routeText = s.route_to >= 1 ? `<span class="match-text">${a.route_to}</span>` : (s.route_to === 0.5 ? `<span style="color:var(--amber); font-size:11px; font-family:var(--mono);">${a.route_to} (~)</span>` : `<span class="mismatch-text">${a.route_to} ≠ ${b.route_to}</span>`);
+    const nhrText = s.needs_human_review ? `<span class="match-text">${a.needs_human_review}</span>` : `<span class="mismatch-text">${a.needs_human_review} ≠ ${b.needs_human_review}</span>`;
+
+    return `
+      <tr>
+        <td style="font-family:var(--mono); font-size:11px; color:var(--accent); font-weight:500;">${r.id}</td>
+        <td>${catText}</td>
+        <td>${priText}</td>
+        <td>${routeText}</td>
+        <td>${nhrText}</td>
+        <td style="${strictStyle}">${strictIcon}</td>
+      </tr>`;
+  }).join('');
+
+  const table = `
+    <div class="eval-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Route To</th>
+            <th>Human Review</th>
+            <th>Strict</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('evalResults').innerHTML = scoreBoard + table;
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function escHtml(s) {
+  if (!s && s !== false) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

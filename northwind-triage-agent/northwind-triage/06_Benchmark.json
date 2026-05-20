@@ -1,0 +1,363 @@
+{
+  "_meta": {
+    "description": "Gold-standard triage decisions for the 20 messages in 05_Inbound_Messages.json. Use these to score your agent. Note: a handful of these are deliberately debatable — if you spot one and disagree, that's signal for us, not a problem. Document your disagreements in your write-up.",
+    "scoring_note": "We score on six fields per message: category, priority, route_to, needs_human_review, plus a qualitative pass on draft_reply (tone) and reasoning (judgement). See 07_Evaluation_Rubric.pdf for the full rubric.",
+    "ambiguous_cases": "MSG-007, MSG-008, MSG-010, MSG-016, MSG-017, MSG-020 each contain at least one judgement call. Don't expect a perfect 20/20 — we don't.",
+    "fields": {
+      "category": "BOOKING | QUOTE | COMPLAINT | EMERGENCY | BILLING | OUT_OF_SCOPE",
+      "priority": "P1 | P2 | P3",
+      "route_to": "Dispatch | Sales | Accounts | Customer Care",
+      "needs_human_review": "true | false",
+      "draft_reply_must_include": "List of points the reply MUST acknowledge or state. Used for partial-credit scoring on the draft.",
+      "draft_reply_must_not_include": "List of things the reply must NOT do (price quotes, exclamation marks, etc.). Used as negative checks."
+    }
+  },
+  "decisions": [
+    {
+      "id": "MSG-001",
+      "category": "BOOKING",
+      "priority": "P3",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "specific reference to the dripping tap",
+        "uses customer first name (Sarah)",
+        "states next step (someone will call to book a time)"
+      ],
+      "draft_reply_must_not_include": [
+        "specific price quote",
+        "exclamation marks",
+        "named tradesperson"
+      ],
+      "notes": "Straightforward booking. Tap washer replacement is in catalogue at $120 fixed, but the SOP and tone guide both say not to quote in a first response unless directly asked. Could arguably be QUOTE if you read 'book someone to come and look' as estimate-seeking — but the customer says 'book', so BOOKING."
+    },
+    {
+      "id": "MSG-002",
+      "category": "EMERGENCY",
+      "priority": "P1",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges active leak",
+        "states someone will call within the hour",
+        "practical interim advice (e.g. shut off mains)"
+      ],
+      "draft_reply_must_not_include": [
+        "price quote",
+        "promises of next-day service",
+        "generic 'we will be in touch shortly' phrasing"
+      ],
+      "notes": "Active water through ceiling, after-hours SMS. Textbook P1 EMERGENCY. SOP says EMERGENCY plumbing has on-call tradies and goes to Dispatch."
+    },
+    {
+      "id": "MSG-003",
+      "category": "OUT_OF_SCOPE",
+      "priority": "P3",
+      "route_to": "Customer Care",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "states gutter cleaning is not offered",
+        "polite — does not over-apologise",
+        "ideally suggests the customer try elsewhere"
+      ],
+      "draft_reply_must_not_include": [
+        "price quote",
+        "promise to send a quote anyway",
+        "exclamation marks"
+      ],
+      "notes": "Catalogue explicitly excludes roofing and gutter work. OUT_OF_SCOPE → Customer Care per SOP routing rules."
+    },
+    {
+      "id": "MSG-004",
+      "category": "COMPLAINT",
+      "priority": "P2",
+      "route_to": "Customer Care + Accounts",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "directly acknowledges the billing surprise",
+        "states it will be reviewed and someone will call back today",
+        "does not promise a refund or admit fault prematurely"
+      ],
+      "draft_reply_must_not_include": [
+        "blame on the customer",
+        "denial of the surcharge before review",
+        "exclamation marks"
+      ],
+      "notes": "COMPLAINT involving billing dispute. Disputed amount is $150, which is under the SOP's $500 threshold for cc'ing Accounts — but the SOP's $1,000 P2 threshold for complaint priority is also not met (job total is $720). Reasonable answers: P2 because customer threatens online review (review-trigger language is in the SOP's flag list), or P3 by strict letter of the SOP. We've gone P2. Either is defensible — note your call. Routing: Customer Care leads, but because there's a billing dispute element we've cc'd Accounts as a judgement call (the SOP's $500 cc-rule technically doesn't trigger here — flag this if you spot it). needs_human_review = true because of review-threat language."
+    },
+    {
+      "id": "MSG-005",
+      "category": "QUOTE",
+      "priority": "P3",
+      "route_to": "Sales",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "uses customer first name (Priya)",
+        "confirms quote will be sent",
+        "sets timing expectation (within 1 business day)"
+      ],
+      "draft_reply_must_not_include": [
+        "specific price quote (catalogue lists 'from $1,400' which is not a fixed price)",
+        "named tradesperson",
+        "exclamation marks"
+      ],
+      "notes": "Standard QUOTE. EV charger single-phase is in catalogue. Note the 12-month minimum service age rule — Chatswood property built 2019 satisfies this."
+    },
+    {
+      "id": "MSG-006",
+      "category": "EMERGENCY",
+      "priority": "P1",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges no hot water with kids in the house",
+        "states someone will call within the hour",
+        "uses customer first name (Kevin)"
+      ],
+      "draft_reply_must_not_include": [
+        "downgrade to next-day",
+        "price quote",
+        "exclamation marks"
+      ],
+      "notes": "SOP examples explicitly list 'no hot water in winter' as P1 EMERGENCY. Family with children, June (winter in Sydney). Hornsby is within 40km of CBD. Also: this could be argued as a BOOKING for a hot water repair — but the SOP is clear that lack of essential function = EMERGENCY-eligible, and 'no hot water in winter' is named explicitly."
+    },
+    {
+      "id": "MSG-007",
+      "category": "OUT_OF_SCOPE",
+      "priority": "P3",
+      "route_to": "Customer Care",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "states appliance repair is not something Northwind does",
+        "polite, brief"
+      ],
+      "draft_reply_must_not_include": [
+        "promise of a tradesperson visit",
+        "price quote"
+      ],
+      "notes": "Tricky. Catalogue says 'we install but do not repair' appliances. So this is OUT_OF_SCOPE for repair. Some agents will misclassify as BOOKING because the customer asks confidently for repair. Mark needs_human_review = true because the customer might benefit from a referral and the line between 'install' and 'repair' is a customer-facing nuance worth a human eye."
+    },
+    {
+      "id": "MSG-008",
+      "category": "QUOTE",
+      "priority": "P3",
+      "route_to": "Sales",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "confirms Northwind can take this on",
+        "states a site visit / written quote will follow",
+        "uses customer first name (Alex)"
+      ],
+      "draft_reply_must_not_include": [
+        "fixed price",
+        "commitment to specific dates",
+        "exclamation marks"
+      ],
+      "notes": "Bathroom renovation plumbing is in catalogue ('from $4,500'). This is a QUOTE going to Sales. Flag for human review because the catalogue threshold for human-review flag is quotes over $5,000 — bathroom renos commonly exceed this and the SOP says flag when borderline. Defensible to leave needs_human_review = false if you read it strictly."
+    },
+    {
+      "id": "MSG-009",
+      "category": "BOOKING",
+      "priority": "P2",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges ducted heater issue",
+        "states next-business-day allocation (uses Linda's name)",
+        "manages expectations — not promising same-day"
+      ],
+      "draft_reply_must_not_include": [
+        "promise of same-day service (HVAC has no on-call)",
+        "price quote",
+        "exclamation marks"
+      ],
+      "notes": "After-hours SMS. SOP is explicit: HVAC has no on-call, so this is P2 routed to Dispatch for next-business-day. Could be argued as EMERGENCY because heater not working in winter — but the SOP only lists 'no hot water in winter' as the heating-related P1 trigger, not 'heater not working'. Defensible either way; flag in your write-up if you went P1."
+    },
+    {
+      "id": "MSG-010",
+      "category": "QUOTE",
+      "priority": "P3",
+      "route_to": "Sales",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "confirms quote will be sent",
+        "acknowledges multi-unit nature of the job"
+      ],
+      "draft_reply_must_not_include": [
+        "fixed price",
+        "commitment without site visit"
+      ],
+      "notes": "Multi-unit strata job. Catalogue says 'residential only, under 200m² per premises' — strata block of 8 units totals well over 200m² in aggregate, but each unit is residential and individually under 200m². The catalogue rule is ambiguous here. Flag for human review. A reasonable agent could classify this as OUT_OF_SCOPE; we've gone QUOTE + flag because each unit is residential. Note your read."
+    },
+    {
+      "id": "MSG-011",
+      "category": "OUT_OF_SCOPE",
+      "priority": "P3",
+      "route_to": "Customer Care",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "states solar isn't something Northwind does",
+        "mentions referral partner (SunPath Energy)",
+        "uses customer first name (Jess)"
+      ],
+      "draft_reply_must_not_include": [
+        "promise of a quote",
+        "exclamation marks"
+      ],
+      "notes": "Catalogue explicitly excludes solar and names the referral partner. Clear OUT_OF_SCOPE."
+    },
+    {
+      "id": "MSG-012",
+      "category": "BOOKING",
+      "priority": "P3",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges the reschedule request",
+        "confirms dispatch will sort new time",
+        "uses customer first name (George)"
+      ],
+      "draft_reply_must_not_include": [
+        "treating it as a complaint",
+        "price quote"
+      ],
+      "notes": "SOP explicit: a reschedule is BOOKING, not COMPLAINT, unless the customer expresses dissatisfaction. Customer is polite. Clear case."
+    },
+    {
+      "id": "MSG-013",
+      "category": "OUT_OF_SCOPE",
+      "priority": "P3",
+      "route_to": "Customer Care",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "(no draft is fine — message is gibberish; agent should flag and skip drafting)"
+      ],
+      "draft_reply_must_not_include": [
+        "any pretense of understanding the request",
+        "fabricated content"
+      ],
+      "notes": "Garbled / spam test submission. SOP says flag for human review when garbled. OUT_OF_SCOPE is the cleanest classification. Agents that try to draft a coherent reply here lose marks."
+    },
+    {
+      "id": "MSG-014",
+      "category": "EMERGENCY",
+      "priority": "P1",
+      "route_to": "Dispatch",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges the burning smell / electrical risk",
+        "praises the customer for already isolating the circuit",
+        "states someone will call within the hour"
+      ],
+      "draft_reply_must_not_include": [
+        "downgrade because customer has already isolated it",
+        "price quote",
+        "exclamation marks"
+      ],
+      "notes": "SOP examples list 'sparking, smell of burning' as P1. Customer has sensibly isolated the circuit but the underlying fault is still active. EMERGENCY → Dispatch, P1."
+    },
+    {
+      "id": "MSG-015",
+      "category": "BILLING",
+      "priority": "P3",
+      "route_to": "Accounts",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "acknowledges the payment query",
+        "confirms Accounts will check and respond",
+        "uses customer first name (Ben)"
+      ],
+      "draft_reply_must_not_include": [
+        "confirmation that payment was received (we don't know)",
+        "promise of resolution timing beyond SLA"
+      ],
+      "notes": "Standard BILLING enquiry. Goes to Accounts."
+    },
+    {
+      "id": "MSG-016",
+      "category": "QUOTE",
+      "priority": "P3",
+      "route_to": "Sales",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "confirms both the switchboard and ducted aircon quotes can be done",
+        "mentions site visit",
+        "uses customer first name (Olivia)"
+      ],
+      "draft_reply_must_not_include": [
+        "fixed price",
+        "promise of a single visit (ducted needs separate site assessment per catalogue)"
+      ],
+      "notes": "Two QUOTE items in one message. Both in catalogue (switchboard from $2,200, ducted from $9,500). Ducted aircon quote alone exceeds the $5,000 human-review threshold. Flag is correct. Agents that miss the second request (ducted aircon) lose marks."
+    },
+    {
+      "id": "MSG-017",
+      "category": "COMPLAINT",
+      "priority": "P2",
+      "route_to": "Customer Care",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "directly acknowledges the conduct issue (not the work)",
+        "states Customer Care lead will call back today",
+        "uses customer first name (Robert)"
+      ],
+      "draft_reply_must_not_include": [
+        "defending the tradesperson",
+        "framing as a billing matter",
+        "exclamation marks"
+      ],
+      "notes": "Conduct complaint, not a work or billing complaint. Job amount ($280) is well below the $1,000 P2 threshold, but tone guide is explicit: when a customer is upset, acknowledge directly. Customer mentions previous-recommender context (neighbour referred), customer is upset. SOP says flag when customer is upset — we've gone P2 with flag = true. P3 is also defensible by strict reading of SOP priority rules. Note your call."
+    },
+    {
+      "id": "MSG-018",
+      "category": "EMERGENCY",
+      "priority": "P1",
+      "route_to": "Dispatch",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "acknowledges urgency",
+        "states someone will call back",
+        "ideally responds in plain English (we don't promise multilingual support)"
+      ],
+      "draft_reply_must_not_include": [
+        "fabricated Spanish reply (unless the agent or company actually supports it)",
+        "price quote"
+      ],
+      "notes": "Spanish-language SMS. SOP says flag for human review when message is in a non-English language. Content is clearly an emergency (water from water heater, urgent). Classify as EMERGENCY P1, route to Dispatch, flag for human review. Bonus: agents that translate the content before classifying show good judgement; agents that misclassify as 'unintelligible' miss the easy win."
+    },
+    {
+      "id": "MSG-019",
+      "category": "BILLING",
+      "priority": "P2",
+      "route_to": "Accounts",
+      "needs_human_review": true,
+      "draft_reply_must_include": [
+        "acknowledges the missed refund timing",
+        "confirms Accounts will follow up",
+        "uses customer first name (Catherine)"
+      ],
+      "draft_reply_must_not_include": [
+        "blame on the customer",
+        "promise of immediate refund without verification"
+      ],
+      "notes": "Refund of $720 — over the $500 refund threshold for human review per SOP. Goes to Accounts. Customer is mildly upset but not threatening; this is BILLING, not COMPLAINT (the substantive issue is the refund, not the service). P2 because refund delay has financial impact and customer is following up — defensible as P3. Note your read."
+    },
+    {
+      "id": "MSG-020",
+      "category": "QUOTE",
+      "priority": "P3",
+      "route_to": "Sales",
+      "needs_human_review": false,
+      "draft_reply_must_include": [
+        "confirms quote will follow with site visit",
+        "acknowledges the brick-wall flag",
+        "uses customer first name (Nathan)"
+      ],
+      "draft_reply_must_not_include": [
+        "fixed price (split-system installation is 'from $1,600', not fixed)",
+        "exclamation marks"
+      ],
+      "notes": "Standard QUOTE for split-system install. Glebe is within 40km of CBD. 'From $1,600' is below the $5,000 review threshold so no flag needed. Agents that flag it because the customer mentioned a complication (brick wall) are being too cautious — the SOP threshold is the right rule to apply, not vibes."
+    }
+  ]
+}
