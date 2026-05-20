@@ -1,5 +1,5 @@
 """
-Northwind Triage Agent — powered by Google Gemini (tested with Gemini 3.1 Flash Lite).
+Northwind Triage Agent — powered by Google Gemini.
 
 Architecture decision: single-shot structured output via Gemini's JSON mode.
 All policy documents (SOP, Service Catalogue, Tone & Style Guide) are embedded
@@ -359,13 +359,11 @@ class RateLimitError(Exception):
     pass
 
 
-# Default to gemini-3.1-flash-lite.
+# Model: gemini-3.1-flash-lite.
 #
-# This model offers excellent performance and reliability for structured output tasks.
-# It has a 15 RPM rate limit on the free tier and handles thinking modes efficiently.
-#
-# For this task (rule-based classification with structured output), gemini-3.1-flash-lite is
-# the right choice: high throughput, fast, and reliable structured output.
+# This is a rule-based classification task with structured JSON output. flash-lite
+# is the right tier: fast, high-throughput, and reliable for structured output.
+# Override via the GEMINI_MODEL environment variable if needed.
 DEFAULT_MODEL = "gemini-3.1-flash-lite"
 
 # Retry config — Gemini free tier is 10–15 RPM, so 429s on bursts are normal.
@@ -424,10 +422,9 @@ class TriageAgent:
     Design: one well-prompted call with the full reference corpus in context.
     Low temperature for rule-following consistency. JSON mode for structured output.
 
-    Uses Gemini 3.1 Flash Lite for fast and reliable structured output.
-
-    Rate-limit handling: Gemini's free tier provides 15 RPM for gemini-3.1-flash-lite.
-    The .triage() method retries 429s with exponential backoff and respects the server's retryDelay hint when present.
+    Rate-limit handling: the .triage() method retries 429s with exponential backoff
+    and respects the server's retryDelay hint when present. It also retries once on a
+    truncated (MAX_TOKENS) response with a larger output-token budget.
     """
 
     def __init__(self, model: Optional[str] = None):
@@ -440,21 +437,23 @@ class TriageAgent:
         self._model_name = model or os.getenv("GEMINI_MODEL", DEFAULT_MODEL)
         self._client = genai.Client(api_key=api_key)
 
-        # gemini-3.1 uses thinking_level; we set it to "low" for fastest output
+        # Gemini models have "thinking" enabled by default, which spends part of the
+        # output-token budget on internal reasoning before producing the response.
+        # For a fast, deterministic classification task we set thinking to its lowest
+        # setting so the full budget goes to the structured JSON response, and we give
+        # generous output headroom as a safety net.
         self._thinking_config = None
-        if self._model_name.startswith("gemini-3"):
-            try:
-                self._thinking_config = types.ThinkingConfig(thinking_level="low")
-            except Exception:
-                pass
+        try:
+            self._thinking_config = types.ThinkingConfig(thinking_level="low")
+        except Exception:
+            self._thinking_config = None
 
         self._max_tokens_initial = 4096
         self._max_tokens_retry = 8192
         self._config = self._build_config(self._max_tokens_initial)
 
         print(f"[agent] Using model: {self._model_name} "
-              f"(thinking disabled: {self._thinking_config is not None}, "
-              f"max_output_tokens: {self._max_tokens_initial})")
+              f"(max_output_tokens: {self._max_tokens_initial})")
 
     def _build_config(self, max_output_tokens: int) -> "types.GenerateContentConfig":
         """Build a GenerateContentConfig with the given output-token budget."""
@@ -528,8 +527,8 @@ class TriageAgent:
         raw, finish_reason = self._call(prompt, self._config)
 
         # If the response was truncated (MAX_TOKENS) or empty, retry once with
-        # a much larger token budget. This handles the case where Gemini 2.5's
-        # thinking mode silently consumes tokens despite thinking_budget=0.
+        # a much larger token budget. This handles cases where the model spends
+        # part of its budget on internal thinking before producing the response.
         reason_str = str(finish_reason) if finish_reason else "unknown"
         if not raw or "MAX_TOKENS" in reason_str:
             print(f"[agent] First attempt truncated/empty (finish_reason={reason_str}). "
@@ -557,10 +556,7 @@ class TriageAgent:
 
             hint = ""
             if "MAX_TOKENS" in reason_str:
-                hint = (
-                    " The response was truncated by the token limit even after retry. "
-                    "Check the message content or reduce prompt complexity."
-                )
+                hint = " The response was truncated by the token limit even after retry."
             elif "SAFETY" in reason_str or "PROHIBITED" in reason_str or "BLOCKLIST" in reason_str:
                 hint = f" The response was blocked by a content filter ({reason_str})."
 

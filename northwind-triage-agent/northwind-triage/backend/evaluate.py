@@ -63,13 +63,11 @@ def run_evaluation(agent, progress_callback=None) -> dict:
     Run agent across all 20 messages. Returns a full evaluation report.
 
     Rate limiting:
-      Gemini free tier is 10 RPM (2.5-flash) or 15 RPM (2.5-flash-lite). The
-      agent itself retries 429s with exponential backoff, but proactive spacing
-      between calls is cheaper than letting the server reject us.
-
-      Default: 7s between calls (~8.5 RPM, comfortably under the 10 RPM limit).
-      Override with GEMINI_REQUEST_DELAY_S env var. Set to 4.5 for paid tier
-      or flash-lite (15 RPM), or 0 to send back-to-back and rely on retries.
+      The agent retries 429s with exponential backoff, but proactively spacing
+      calls apart is cheaper than letting the server reject us. The default of
+      4.5s between calls keeps us under the free-tier per-minute request limit.
+      Override with the GEMINI_REQUEST_DELAY_S env var (set to 0 on a paid tier
+      with higher limits to run back-to-back).
     """
     messages = load_messages()
     benchmark = load_benchmark()

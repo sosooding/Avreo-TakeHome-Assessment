@@ -1,6 +1,5 @@
 """
 FastAPI backend for the Northwind Triage Agent.
-Powered by Gemini 3.1 Flash Lite.
 
 Endpoints:
   POST /triage      — Triage a single message, returns structured JSON decision.
@@ -41,7 +40,7 @@ from agent import TriageAgent
 from evaluate import load_benchmark, load_messages, run_evaluation
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 
 _agent: Optional[TriageAgent] = None
 
@@ -123,10 +122,10 @@ async def evaluate():
     Runs the agent against all 20 messages in 05_Inbound_Messages.json,
     scores against 06_Benchmark.json, and returns the full evaluation report.
 
-    Note: This takes ~1.5 minutes on the Gemini free tier (15 RPM = one call
-    every ~4.5 seconds). Set GEMINI_REQUEST_DELAY_S
-    in your .env to tune this — lower for paid tiers, 0 to send back-to-back
-    and rely on the agent's built-in retry/backoff.
+    Note: This takes ~1.5 minutes on the Gemini free tier, since calls are
+    spaced ~4.5 seconds apart to stay under the per-minute request limit.
+    Set GEMINI_REQUEST_DELAY_S in your .env to tune this — lower it (or set
+    it to 0) on a paid tier with higher limits.
     """
     if _agent is None:
         raise HTTPException(503, detail="Agent not ready — check GEMINI_API_KEY in .env")
@@ -155,10 +154,10 @@ async def health():
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
 if __name__ == "__main__":

@@ -630,10 +630,6 @@
         <label>Message Body</label>
         <textarea id="body" rows="8" placeholder="Paste or type the customer's message here…"></textarea>
       </div>
-      <div class="field-group">
-        <label>Received At (optional)</label>
-        <input type="text" id="receivedAt" placeholder="e.g. 2024-06-12T22:47:00+10:00" />
-      </div>
       <button class="btn-triage" id="triageBtn" onclick="handleTriage()">
         <span id="btnLabel">Triage Message</span>
       </button>
@@ -677,7 +673,7 @@
           </button>
         </div>
         <div class="eval-warning">
-          ⏱ This runs the agent across all 20 benchmark messages. Expect ~1.5 minutes on the Gemini free tier (15 RPM = one call every 4.5 seconds).
+          ⏱ This runs the agent across all 20 benchmark messages. Expect ~1.5 minutes — calls are spaced out to stay under the Gemini free-tier rate limit.
         </div>
         <div id="evalResults"></div>
       </div>
@@ -773,7 +769,7 @@ async function handleTriage() {
   const payload = {
     id: 'MSG-CUSTOM',
     channel: document.getElementById('channel').value,
-    received_at: document.getElementById('receivedAt').value || new Date().toISOString(),
+    received_at: new Date().toISOString(),
     sender_name: document.getElementById('senderName').value,
     sender_address: document.getElementById('senderAddress').value,
     subject: document.getElementById('subject').value || null,
