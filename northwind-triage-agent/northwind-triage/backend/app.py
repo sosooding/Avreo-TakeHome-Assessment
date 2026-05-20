@@ -117,10 +117,18 @@ async def triage(req: MessageRequest):
 
 
 @app.post("/evaluate", summary="Run batch evaluation across all 20 benchmark messages")
-async def evaluate():
+async def evaluate(llm_judge: bool = False):
     """
     Runs the agent against all 20 messages in 05_Inbound_Messages.json,
     scores against 06_Benchmark.json, and returns the full evaluation report.
+
+    The free deterministic tone checks always run (no extra API cost). The
+    LLM-as-judge is opt-in:
+
+    Query params:
+      llm_judge (bool, default false): also run an LLM-as-judge pass to grade
+      draft tone and reasoning quality. This doubles API usage (one extra call
+      per message), so it's off by default to protect free-tier quota.
 
     Note: This takes ~1.5 minutes on the Gemini free tier, since calls are
     spaced ~4.5 seconds apart to stay under the per-minute request limit.
@@ -130,7 +138,7 @@ async def evaluate():
     if _agent is None:
         raise HTTPException(503, detail="Agent not ready — check GEMINI_API_KEY in .env")
     try:
-        report = run_evaluation(_agent)
+        report = run_evaluation(_agent, qualitative=True, llm_judge=llm_judge)
         return JSONResponse(report)
     except Exception as e:
         raise HTTPException(500, detail=str(e))

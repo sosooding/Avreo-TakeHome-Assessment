@@ -58,9 +58,19 @@ def _score_route(agent_route: str, benchmark_route: str) -> float:
     return 0.0
 
 
-def run_evaluation(agent, progress_callback=None) -> dict:
+def run_evaluation(agent, progress_callback=None, qualitative: bool = True, llm_judge: bool = False) -> dict:
     """
     Run agent across all 20 messages. Returns a full evaluation report.
+
+    The free deterministic tone checks run on every batch evaluation (they cost
+    nothing — no API calls). The LLM-as-judge is opt-in, since it doubles API usage.
+
+    Args:
+      qualitative: run the deterministic tone checks on each draft reply (default True;
+                   free, no API calls). Set False to skip the qualitative section entirely.
+      llm_judge:   additionally run an LLM-as-judge pass on each draft (default False).
+                   Implies qualitative=True. Makes one extra API call per message,
+                   doubling quota usage.
 
     Rate limiting:
       The agent retries 429s with exponential backoff, but proactively spacing
@@ -69,12 +79,22 @@ def run_evaluation(agent, progress_callback=None) -> dict:
       Override with the GEMINI_REQUEST_DELAY_S env var (set to 0 on a paid tier
       with higher limits to run back-to-back).
     """
+    from qualitative_checks import deterministic_checks, llm_judge as run_llm_judge, summarise_qualitative
+
+    # Asking for the LLM judge implies you want qualitative checks at all.
+    if llm_judge:
+        qualitative = True
+
     messages = load_messages()
     benchmark = load_benchmark()
 
     delay_s = float(os.getenv("GEMINI_REQUEST_DELAY_S", "4.5"))
     print(f"[eval] Running {len(messages)} messages with {delay_s}s spacing between calls "
           f"(set GEMINI_REQUEST_DELAY_S to override)")
+    if qualitative:
+        print(f"[eval] Qualitative checks: deterministic=ON, llm_judge={'ON' if llm_judge else 'OFF'}")
+    else:
+        print("[eval] Qualitative checks: OFF (quantitative scorecard only)")
 
     results = []
     field_scores = {"category": [], "priority": [], "route_to": [], "needs_human_review": []}
@@ -149,6 +169,22 @@ def run_evaluation(agent, progress_callback=None) -> dict:
         field_scores["route_to"].append(route_score)
         field_scores["needs_human_review"].append(nhr_score)
 
+        # Qualitative checks (rubric: not scored, but reported)
+        qualitative_result = None
+        if qualitative:
+            qualitative_result = {
+                "deterministic": deterministic_checks(decision.get("draft_reply", "")),
+            }
+            if llm_judge:
+                judge = run_llm_judge(
+                    client=agent._client,
+                    model_name=agent._model_name,
+                    message=msg,
+                    decision=decision,
+                    benchmark=gold,
+                )
+                qualitative_result["llm_judge"] = judge
+
         results.append({
             "id": msg_id,
             "error": None,
@@ -161,22 +197,28 @@ def run_evaluation(agent, progress_callback=None) -> dict:
                 "needs_human_review": nhr_score,
                 "strict": strict,
             },
+            "qualitative": qualitative_result,
         })
 
-        # Rate limiting: stay under Gemini free-tier RPM
+        # Rate limiting: stay under Gemini free-tier RPM.
+        # If the LLM judge also ran, it already used one call, so we wait the
+        # full delay regardless to keep us safely under the per-minute limit.
         if i < len(messages) - 1:
             time.sleep(delay_s)
 
     n = len(messages)
     per_field = {k: round(sum(v) / n * 100, 1) for k, v in field_scores.items()}
 
-    return {
+    report = {
         "total_messages": n,
         "strict_accuracy": round(strict_matches / n * 100, 1),
         "strict_count": strict_matches,
         "per_field_accuracy": per_field,
         "results": results,
     }
+    if qualitative:
+        report["qualitative_summary"] = summarise_qualitative(results)
+    return report
 
 
 def print_report(report: dict):
@@ -213,13 +255,56 @@ def print_report(report: dict):
         note = " | " + ", ".join(mismatch) if mismatch else ""
         print(f"  {r['id']:<12} {s['category']:>4} {s['priority']:>4} {s['route_to']:>6.1f} {s['needs_human_review']:>4} {strict_icon:>7}{note}")
 
+    # Qualitative summary
+    qs = report.get("qualitative_summary")
+    if qs:
+        print("\n" + "-"*60)
+        print("QUALITATIVE CHECKS (not scored — reported per the rubric)")
+        print("-"*60)
+        if qs.get("deterministic_avg_pct") is not None:
+            print(f"  Deterministic tone checks (avg):  {qs['deterministic_avg_pct']}%")
+        if qs.get("messages_judged_by_llm"):
+            print(f"  Messages graded by LLM judge:     {qs['messages_judged_by_llm']}")
+            print(f"  Avg tone score (1–5):             {qs.get('avg_tone_score')}")
+            print(f"  Avg reasoning score (1–5):        {qs.get('avg_reasoning_score')}")
+            print(f"  Must-include coverage:            {qs.get('must_include_coverage_pct')}%")
+            print(f"  Total must-not-include violations: {qs.get('total_must_not_violations')}")
+        else:
+            print("  LLM judge: not run (use --judge to enable)")
+
+        # Show any messages with deterministic tone issues
+        flagged = [r for r in report["results"]
+                   if r.get("qualitative") and r["qualitative"].get("deterministic")
+                   and r["qualitative"]["deterministic"]["issues"]]
+        if flagged:
+            print("\n  Draft replies with tone issues:")
+            for r in flagged:
+                print(f"    {r['id']}:")
+                for issue in r["qualitative"]["deterministic"]["issues"]:
+                    print(f"      - {issue}")
+
     print("="*60 + "\n")
 
 
 if __name__ == "__main__":
+    import sys
     from agent import TriageAgent
+
+    args = sys.argv[1:]
+    if "--help" in args or "-h" in args:
+        print("Usage: python evaluate.py [--judge]")
+        print("  (no flags)   Quantitative scorecard + free deterministic tone checks.")
+        print("  --judge      Also run the LLM-as-judge (uses 2x API calls).")
+        sys.exit(0)
+
+    use_judge = "--judge" in args
+
     agent = TriageAgent()
-    report = run_evaluation(agent)
+    report = run_evaluation(
+        agent,
+        qualitative=True,      # free deterministic checks always run
+        llm_judge=use_judge,   # LLM judge is opt-in
+    )
     print_report(report)
 
     os.makedirs(os.path.join(BASE_DIR, "outputs"), exist_ok=True)

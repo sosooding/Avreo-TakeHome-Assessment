@@ -415,6 +415,25 @@ def _is_rate_limit_error(err: Exception) -> bool:
     return "429" in msg or "resource_exhausted" in msg or "rate limit" in msg or "quota" in msg
 
 
+def _is_transient_server_error(err: Exception) -> bool:
+    """
+    Detect a transient server-side error worth retrying: 503 UNAVAILABLE
+    ("model experiencing high demand") or 500 INTERNAL. These are temporary
+    and usually clear on a retry — unlike a 400/permission error.
+    """
+    code = getattr(err, "code", None) or getattr(err, "status_code", None)
+    if code in (500, 503):
+        return True
+    msg = str(err).lower()
+    return ("503" in msg or "500" in msg or "unavailable" in msg
+            or "high demand" in msg or "internal" in msg or "overloaded" in msg)
+
+
+def _is_retryable_error(err: Exception) -> bool:
+    """Either a rate-limit (429) or a transient server error (500/503) — both worth retrying."""
+    return _is_rate_limit_error(err) or _is_transient_server_error(err)
+
+
 class TriageAgent:
     """
     Single-shot Gemini triage agent using the google-genai SDK.
@@ -467,7 +486,7 @@ class TriageAgent:
         )
 
     def _generate_with_retry(self, prompt: str, config=None):
-        """Call Gemini with exponential backoff on 429 / transient errors."""
+        """Call Gemini with exponential backoff on 429 rate limits and transient 5xx errors."""
         if config is None:
             config = self._config
         last_err: Optional[Exception] = None
@@ -480,7 +499,9 @@ class TriageAgent:
                 )
             except Exception as e:
                 last_err = e
-                if not _is_rate_limit_error(e):
+                # Only retry rate limits (429) and transient server errors (500/503).
+                # Anything else (bad request, auth, etc.) is not retryable — raise it.
+                if not _is_retryable_error(e):
                     raise
                 # Daily quota errors can't be retried away — surface a clear message
                 if _is_daily_quota_error(e):
@@ -499,10 +520,11 @@ class TriageAgent:
                     delay = min(hinted + random.uniform(0.2, 0.8), _MAX_DELAY_S)
                 else:
                     delay = min(_BASE_DELAY_S * (2 ** attempt) + random.uniform(0, 1.0), _MAX_DELAY_S)
-                print(f"[agent] 429 rate-limited — backing off {delay:.1f}s (attempt {attempt + 1}/{_MAX_RETRIES})")
+                kind = "503 server-overload" if _is_transient_server_error(e) else "429 rate-limited"
+                print(f"[agent] {kind} — backing off {delay:.1f}s (attempt {attempt + 1}/{_MAX_RETRIES})")
                 time.sleep(delay)
         # If we exhausted retries
-        raise RateLimitError(f"Exhausted {_MAX_RETRIES} retries on rate-limit error: {last_err}")
+        raise RateLimitError(f"Exhausted {_MAX_RETRIES} retries on retryable error: {last_err}")
 
     def _call(self, prompt: str, config) -> tuple:
         """Call Gemini, returning (raw_text, finish_reason)."""
